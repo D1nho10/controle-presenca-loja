@@ -2,28 +2,35 @@
 
 import { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
-import { useUser, useSupabaseClient } from '@supabase/auth-helpers-react'
+import { supabase } from '@/lib/supabase'
 import { getCurrentUser, type AuthUser } from '@/lib/auth'
 
 export function useAuth() {
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const user = useUser()
-  const supabase = useSupabaseClient()
 
   useEffect(() => {
-    const getUser = async () => {
-      if (user) {
-        const currentUser = await getCurrentUser()
-        setAuthUser(currentUser)
-      } else {
-        setAuthUser(null)
-      }
+    // Obter usuário inicial
+    getCurrentUser().then((user) => {
+      setUser(user)
       setLoading(false)
-    }
+    })
 
-    getUser()
-  }, [user])
+    // Escutar mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          const authUser = await getCurrentUser()
+          setUser(authUser)
+        } else {
+          setUser(null)
+        }
+        setLoading(false)
+      }
+    )
 
-  return { user: authUser, loading }
+    return () => subscription.unsubscribe()
+  }, [])
+
+  return { user, loading }
 }

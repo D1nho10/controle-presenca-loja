@@ -8,7 +8,7 @@ import { signOut } from '@/lib/auth'
 import { markAttendance, getAttendanceStats } from '@/lib/attendance'
 import { getLodgeSettings } from '@/lib/geolocation'
 
-export default function HomePage() {
+export default function AppPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [isMarkingAttendance, setIsMarkingAttendance] = useState(false)
@@ -16,6 +16,24 @@ export default function HomePage() {
   const [stats, setStats] = useState<any>(null)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [lodgeSettings, setLodgeSettings] = useState<any>(null)
+
+  // Validar variáveis de ambiente
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('localhost')) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-4">Configuração Necessária</h1>
+          <p className="text-white/80 mb-4">
+            Corrija NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY — não aponte para localhost.
+          </p>
+          <p className="text-white/60 text-sm">
+            Insira as variáveis de ambiente corretas no painel do Lasy.ai e reinicie o projeto.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   // Atualizar horário a cada segundo
   useEffect(() => {
@@ -101,8 +119,17 @@ export default function HomePage() {
   }
 
   if (!user) {
-    router.push('/login')
-    return null
+    useEffect(() => {
+      router.push('/login')
+    }, [router])
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+          <p className="text-white">Redirecionando...</p>
+        </div>
+      </div>
+    )
   }
 
   const timeAllowed = isWithinAllowedTime()
@@ -127,7 +154,7 @@ export default function HomePage() {
             
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-white font-medium">{user.profile?.full_name}</p>
+                <p className="text-white font-medium">{user.profile?.nome}</p>
                 <p className="text-yellow-400 text-sm">{user.profile?.cargo || 'Irmão'}</p>
               </div>
               
